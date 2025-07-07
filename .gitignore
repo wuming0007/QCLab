@@ -1,0 +1,17 @@
+# User-specified directories to ignore
+/home/
+/notebooks/
+
+# UV virtual environment
+/venv-qc/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# OS-generated files
+.DS_Store
+
+# IDE configuration
+.idea/
+.vscode/
