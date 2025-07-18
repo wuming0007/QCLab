@@ -1,180 +1,124 @@
-# QLisp 量子线路语法指南
+# QLisp 核心语法与概念指南
 
-QLisp 是 QuarkStudio 项目中使用的量子线路语法规范，用于描述和操作量子计算电路。
+QLisp 是 QuarkStudio 项目中用于描述和操作量子计算电路的规范。本指南专注于讲解在 `Recipe` 系统中实际使用的 **核心语法**，这对于编写参数化的物理实验至关重要。
+
+> **注意**: QLisp 可能存在一个更高层次、更简洁的抽象语法用于教学或快速构建，但本指南描述的是与后端编译器直接交互的、功能最强大的核心格式。
 
 ## 目录
-- [基本概念](#基本概念)
-- [量子门](#量子门)
-- [Bell态](#bell态)
-- [电路表示](#电路表示)
-- [测量操作](#测量操作)
+- [核心语法](#核心语法)
+- [电路表示与参数化](#电路表示与参数化)
+- [量子门列表](#量子门列表)
 - [预定义电路](#预定义电路)
 - [工具函数](#工具函数)
 - [示例](#示例)
 
-## 基本概念
+---
 
-QLisp 使用列表（List）来表示量子电路，每个元素代表一个量子操作：
-- 单比特门：`(gate, qubit)`
-- 双比特门：`(gate, (qubit1, qubit2))`
-- 测量操作：`(measure, qubit)`
+## 核心语法
 
-## 量子门
+在 `Recipe` 系统中，量子电路由一个 **Python列表（List）** 表示。列表中的每一个元素都是一个二元元组 `(operation, target)`，代表一个量子操作。
+
+```
+[ (operation_1, target_1), (operation_2, target_2), ... ]
+```
+
+- **`target`**: 应用该操作的目标量子比特，可以是单个比特 `('Q0')` 或多个比特 `('Q0', 'Q1')`。
+- **`operation`**: 这本身也是一个元组，定义了操作的名称和传递给它的参数。
+
+#### `operation` 元组的结构
+
+`operation` 元组的格式为 `('GateName', param1, param2, ...)`。
+
+- **`'GateName'` (字符串, 必需)**: 操作的名称。这个字符串会映射到后端门库中定义的一个具体物理实现（即脉冲序列）。例如：`'X90'`, `'CZ'`, `'Measure'`。
+- **`param1, param2, ...` (可选)**: 传递给该操作的参数。这些参数可以在 `Recipe` 中被动态赋值或扫描。
+
+**示例:**
+- 一个无参数的 X90 门作用于 Q1: `(('X90',), 'Q1')`
+- 一个 CZ 门作用于 Q1 和 Q2: `(('CZ',), ('Q1', 'Q2'))`
+- 一个带参数的测量操作: `(('Measure', 0), 'Q0')` (这里的 `0` 是一个传递进去的参数)
+
+---
+
+## 电路表示与参数化
+
+在实际实验中，我们通常将线路编写为一个 Python 函数。函数的参数（如 `qubits`, `freq`, `amp` 等）由 `Recipe` 在执行时动态传入。
+
+### 基本语法示例
+
+```python
+# 线路函数接收 Recipe 传入的参数
+def my_circuit(qubits: list[str], amp: float, ctx=None):
+    # 第一个参数 'qubits' 是一个包含所有目标比特名称的列表
+    q0 = qubits[0] 
+    q1 = qubits[1]
+
+    circuit = [
+        # 对 q0 应用一个 X90 门
+        (('X90',), q0),
+        # 对 q1 应用一个带可变幅度的 Y 门
+        # 'amp' 的值由 Recipe 在运行时提供
+        (('Y', amp), q1),
+        # 执行 CZ 门
+        (('CZ',), (q0, q1)),
+        # 执行测量
+        (('Measure', 0), q0),
+        (('Measure', 1), q1)
+    ]
+    return circuit
+```
+
+### S21 实验线路 (实际案例)
+
+这是 `s21.py` 中使用的线路，完美地展示了如何通过 `enumerate` 将索引 `i` 作为参数传递给测量操作。
+
+```python
+def s21_circuit(qubits: list[str], freq: float, ctx=None):
+    """
+    为列表中的每个量子比特生成一个测量操作。
+    freq 参数虽然在此处定义，但其值由 Recipe 在外部控制。
+    """
+    # (('Measure', 0), 'Q0'), (('Measure', 1), 'Q1'), ...
+    cc = [(('Measure', i), q) for i, q in enumerate(qubits)]
+    return cc
+```
+
+---
+
+## 量子门列表
+
+下表列出了一些常用的门操作名称 (`'GateName'`)。实际可用的门由后端门库定义。
 
 ### 单比特门
 
-| 门 | 描述 | 矩阵表示 |
-|---|---|---|
-| `H` | Hadamard门 | $\frac{1}{\sqrt{2}}\begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}$ |
-| `sigmaX` | Pauli-X门 | $\begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}$ |
-| `sigmaY` | Pauli-Y门 | $\begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}$ |
-| `sigmaZ` | Pauli-Z门 | $\begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}$ |
-| `S` | S门 | $\begin{pmatrix} 1 & 0 \\ 0 & i \end{pmatrix}$ |
-| `Sdag` | S门的共轭转置 | $\begin{pmatrix} 1 & 0 \\ 0 & -i \end{pmatrix}$ |
-| `T` | T门 | $\begin{pmatrix} 1 & 0 \\ 0 & e^{i\pi/4} \end{pmatrix}$ |
-| `Tdag` | T门的共轭转置 | $\begin{pmatrix} 1 & 0 \\ 0 & e^{-i\pi/4} \end{pmatrix}$ |
+| 门名称 | 描述 |
+|---|---|
+| `'X'` or `'X180'` | Pauli-X 门 (π 脉冲) |
+| `'X90'` | π/2 X-脉冲 |
+| `'Y'` or `'Y180'` | Pauli-Y 门 (π 脉冲) |
+| `'Y90'` | π/2 Y-脉冲 |
+| `'H'` | Hadamard 门 |
+| `'Z'` | Pauli-Z 门 (软件实现的相位门) |
+| `'Measure'` | 测量操作 |
 
 ### 双比特门
 
-| 门 | 描述 | 作用比特 |
-|---|---|---|
-| `CX` | CNOT门 | 控制比特 → 目标比特 |
-| `CZ` | CZ门 | 控制比特 → 目标比特 |
-| `SWAP` | SWAP门 | 交换两个比特 |
-| `iSWAP` | iSWAP门 | 交换 + 相位 |
-| `SQiSWAP` | 平方根iSWAP门 | iSWAP的平方根 |
-| `CR` | 受控旋转门 | 控制比特 → 目标比特 |
-
-### 特殊门
-
-| 门 | 描述 |
+| 门名称 | 描述 |
 |---|---|
-| `U` | 通用单比特门 |
-| `A`, `B` | 自定义门 |
-| `fSim` | fSim门（Fermionic Simulation） |
+| `'CZ'` | 受控Z门 |
+| `'CX'` | 受控X门 (CNOT) |
+| `'iSWAP'` | iSWAP 门 |
 
-## Bell态
-
-QLisp 提供了预定义的 Bell 态：
-
-| 态 | 描述 | 数学表示 |
-|---|---|---|
-| `phiplus` | $|\Phi^+\rangle$ | $\frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)$ |
-| `phiminus` | $|\Phi^-\rangle$ | $\frac{1}{\sqrt{2}}(|00\rangle - |11\rangle)$ |
-| `psiplus` | $|\Psi^+\rangle$ | $\frac{1}{\sqrt{2}}(|01\rangle + |10\rangle)$ |
-| `psiminus` | $|\Psi^-\rangle$ | $\frac{1}{\sqrt{2}}(|01\rangle - |10\rangle)$ |
-| `BellPhiP` | Bell态 $\Phi^+$ | 同 `phiplus` |
-| `BellPhiM` | Bell态 $\Phi^-$ | 同 `phiminus` |
-| `BellPsiP` | Bell态 $\Psi^+$ | 同 `psiplus` |
-| `BellPsiM` | Bell态 $\Psi^-$ | 同 `psiminus` |
-
-## 电路表示
-
-### 基本语法
-
-```python
-import qlisp
-
-# 单比特门
-circuit = [
-    (qlisp.H, 'Q0'),           # Hadamard门作用于Q0
-    (qlisp.sigmaX, 'Q1'),      # X门作用于Q1
-]
-
-# 双比特门
-circuit = [
-    (qlisp.CX, ('Q0', 'Q1')),  # CNOT门：Q0控制Q1
-    (qlisp.SWAP, ('Q1', 'Q2')), # SWAP门：交换Q1和Q2
-]
-
-# 混合电路
-circuit = [
-    (qlisp.H, 'Q0'),
-    (qlisp.CX, ('Q0', 'Q1')),
-    (qlisp.measure, 'Q0'),
-    (qlisp.measure, 'Q1'),
-]
-```
-
-### 复杂电路示例
-
-```python
-# Bell态制备电路
-bell_circuit = [
-    (qlisp.H, 'Q0'),
-    (qlisp.CX, ('Q0', 'Q1')),
-]
-
-# 量子隐形传态电路
-teleport_circuit = [
-    # Alice和Bob共享Bell态
-    (qlisp.H, 'Q0'),
-    (qlisp.CX, ('Q0', 'Q1')),
-    
-    # Alice对要传输的量子比特和她的Bell态比特进行Bell测量
-    (qlisp.CX, ('Q2', 'Q0')),
-    (qlisp.H, 'Q2'),
-    (qlisp.measure, 'Q2'),
-    (qlisp.measure, 'Q0'),
-    
-    # Bob根据测量结果进行相应的操作
-    (qlisp.sigmaX, 'Q1'),  # 条件操作
-    (qlisp.sigmaZ, 'Q1'),  # 条件操作
-]
-```
-
-## 测量操作
-
-### 基本测量
-
-```python
-# 单比特测量
-circuit = [
-    (qlisp.measure, 'Q0'),
-]
-
-# 多比特测量
-circuit = [
-    (qlisp.measure, 'Q0'),
-    (qlisp.measure, 'Q1'),
-    (qlisp.measure, 'Q2'),
-]
-```
-
-### 测量语法
-
-- `(measure, qubit)`: 测量指定比特
-- 测量结果通常以经典比特的形式返回
-- 测量操作会坍缩量子态
+---
 
 ## 预定义电路
 
-QLisp 提供了多种预定义的电路模板：
+QLisp 提供了多种预定义的电路模板，这些是更高层次的封装，便于快速调用标准实验序列：
 
 ### 量子过程层析 (QPT)
 ```python
 import qlisp.circuits as qc
 
-# 量子过程层析
 qpt_circuit = qc.qpt(qubits=['Q0', 'Q1'])
-```
-
-### 量子态层析 (QST)
-```python
-# 量子态层析
-qst_circuit = qc.qst(qubits=['Q0'])
-```
-
-### 动态解耦序列
-```python
-# XY4序列
-xy4_circuit = qc.XY4(qubit='Q0', n_cycles=4)
-
-# XY8序列
-xy8_circuit = qc.XY8(qubit='Q0', n_cycles=4)
-
-# XY16序列
-xy16_circuit = qc.XY16(qubit='Q0', n_cycles=4)
 ```
 
 ### 其他序列
@@ -184,17 +128,11 @@ ramsey_circuit = qc.Ramsey(qubit='Q0')
 
 # Spin Echo序列
 spinecho_circuit = qc.SpinEcho(qubit='Q0')
-
-# CPMG序列
-cpmg_circuit = qc.CPMG(qubit='Q0', n_echoes=4)
-
-# UDD序列
-udd_circuit = qc.UDD(qubit='Q0', n_pulses=3)
 ```
 
-## 工具函数
+---
 
-### 电路操作
+## 工具函数
 
 | 函数 | 描述 |
 |---|---|
@@ -202,129 +140,72 @@ udd_circuit = qc.UDD(qubit='Q0', n_pulses=3)
 | `seq2mat(circuit)` | 将电路转换为矩阵 |
 | `applySeq(circuit, state)` | 将电路应用于量子态 |
 
-### 数学工具
-
-| 函数 | 描述 |
-|---|---|
-| `kak_decomposition(matrix)` | KAK分解 |
-| `kak_vector(matrix)` | 计算KAK向量 |
-| `synchronize_global_phase(matrix1, matrix2)` | 同步全局相位 |
-
-### 其他工具
-
-| 函数 | 描述 |
-|---|---|
-| `make_immutable(obj)` | 使对象不可变 |
-| `measure(qubit)` | 测量函数 |
+---
 
 ## 示例
 
 ### 示例1：Bell态制备和测量
 
 ```python
-import qlisp
+def bell_state_circuit(qubits: list[str], ctx=None):
+    """制备并测量 Bell 态 |Φ+⟩"""
+    q_control = qubits[0]
+    q_target = qubits[1]
 
-# 制备Bell态 |Φ^+⟩
-bell_circuit = [
-    (qlisp.H, 'Q0'),
-    (qlisp.CX, ('Q0', 'Q1')),
-]
-
-# 测量Bell态
-measurement_circuit = [
-    (qlisp.measure, 'Q0'),
-    (qlisp.measure, 'Q1'),
-]
-
-# 完整电路
-full_circuit = bell_circuit + measurement_circuit
-```
-
-### 示例2：量子隐形传态
-
-```python
-# 量子隐形传态电路
-teleport_circuit = [
     # 步骤1：制备Bell态
-    (qlisp.H, 'Q0'),
-    (qlisp.CX, ('Q0', 'Q1')),
-    
-    # 步骤2：Alice的Bell测量
-    (qlisp.CX, ('Q2', 'Q0')),
-    (qlisp.H, 'Q2'),
-    (qlisp.measure, 'Q2'),
-    (qlisp.measure, 'Q0'),
-    
-    # 步骤3：Bob的条件操作（根据测量结果）
-    (qlisp.X, 'Q1'),  # 如果Q2测量结果为1
-    (qlisp.Z, 'Q1'),  # 如果Q0测量结果为1
-]
+    bell_prep = [
+        (('H',), q_control),
+        (('CX',), (q_control, q_target)),
+    ]
+
+    # 步骤2：测量
+    measurement = [
+        (('Measure', 0), q_control),
+        (('Measure', 1), q_target),
+    ]
+
+    return bell_prep + measurement
+
+# 在 Recipe 中使用:
+# rcp.circuit = bell_state_circuit
+# rcp['qubits'] = ('Q0', 'Q1')
 ```
 
-### 示例3：量子傅里叶变换
+### 示例2：参数化的 Rabi 实验
 
 ```python
-def qft_circuit(n_qubits):
-    """n比特量子傅里叶变换电路"""
-    circuit = []
-    
-    for i in range(n_qubits):
-        circuit.append((qlisp.H, f'Q{i}'))
-        for j in range(i + 1, n_qubits):
-            # 添加受控相位门
-            circuit.append((qlisp.CR, (f'Q{i}', f'Q{j}')))
-    
-    return circuit
+def rabi_circuit(qubits: list[str], pulse_amp: float, ctx=None):
+    """
+    执行 Rabi 实验的线路。
+    对一个比特施加一个可变幅度的 X 脉冲，然后进行测量。
+    """
+    target_qubit = qubits[0]
 
-# 3比特QFT
-qft_3 = qft_circuit(3)
+    # 脉冲的幅度 `pulse_amp` 将由 Recipe 在扫描时动态提供
+    rabi_pulse = [
+        (('X', pulse_amp), target_qubit) 
+    ]
+
+    measurement = [
+        (('Measure', 0), target_qubit)
+    ]
+
+    return rabi_pulse + measurement
+
+# 在 Recipe 中使用:
+# rcp.circuit = rabi_circuit
+# rcp['qubits'] = ('Q3',)
+# rcp['pulse_amp'] = np.linspace(0, 1.0, 101) # 扫描幅度从 0 到 1
 ```
 
-### 示例4：Grover算法
-
-```python
-def grover_oracle(marked_state):
-    """Grover算法的Oracle"""
-    circuit = []
-    # 这里简化处理，实际需要根据marked_state构建Oracle
-    circuit.append((qlisp.X, 'Q0'))
-    circuit.append((qlisp.CZ, ('Q0', 'Q1')))
-    circuit.append((qlisp.X, 'Q0'))
-    return circuit
-
-def grover_diffusion(n_qubits):
-    """Grover算法的扩散算子"""
-    circuit = []
-    for i in range(n_qubits):
-        circuit.append((qlisp.H, f'Q{i}'))
-    for i in range(n_qubits):
-        circuit.append((qlisp.X, f'Q{i}'))
-    circuit.append((qlisp.CZ, ('Q0', 'Q1')))
-    for i in range(n_qubits):
-        circuit.append((qlisp.X, f'Q{i}'))
-    for i in range(n_qubits):
-        circuit.append((qlisp.H, f'Q{i}'))
-    return circuit
-
-# Grover算法电路
-grover_circuit = grover_oracle('11') + grover_diffusion(2)
-```
+---
 
 ## 最佳实践
 
-1. **命名规范**: 使用有意义的量子比特名称（如 'Q0', 'Q1', 'Alice', 'Bob'）
-2. **电路结构**: 将复杂电路分解为子电路
-3. **注释**: 为复杂的量子操作添加注释
-4. **测试**: 使用小规模电路验证算法正确性
-5. **优化**: 考虑电路深度和门数量优化
-
-## 注意事项
-
-1. **量子比特顺序**: 注意量子比特的编号和顺序
-2. **门操作顺序**: 量子门的操作顺序很重要
-3. **测量时机**: 测量会坍缩量子态，影响后续操作
-4. **错误处理**: 考虑量子噪声和退相干效应
-5. **硬件限制**: 考虑实际量子硬件的限制和约束
+1. **命名规范**: 使用有意义的量子比特名称（如 'Q0', 'Q1'）。
+2. **电路结构**: 将复杂电路分解为子电路，或使用函数生成。
+3. **注释**: 为复杂的量子操作或线路函数添加清晰的文档字符串。
+4. **参数化**: 充分利用 `Recipe` 系统，将需要扫描或改变的物理量（幅度、频率、时间）作为线路函数的参数。
 
 ---
 

@@ -1,9 +1,10 @@
 # User-specified directories to ignore
-/home/
-/notebooks/
+# /home/
+# /notebooks/
 
 # UV virtual environment
 /venv-qc/
+/.venv/
 
 # Python caches
 __pycache__/

@@ -9,7 +9,13 @@
 在开始之前，请确保您的系统已经安装了 `uv`。如果尚未安装，可以通过 `pip` 进行安装：
 
 ```bash
-pip install uv
+# On macOS and Linux.
+uv --version
+# 如果没有正确输出，则运行以下命令进行安装：
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows.
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ## 2. 环境安装与配置
@@ -23,13 +29,18 @@ pip install uv
 打开终端，执行以下命令：
 
 ```bash
-# 创建一个名为 venv-qc 的虚拟环境，并指定使用 Python 3.12.x
-uv venv venv-qc --python 3.12
+# 在工作目录(例如QCLab）下创建一个虚拟环境，并指定使用 Python 3.12.x。
+uv init --python 3.12 --vcs none QCLab
+# 或者进入到你的工作目录（例如QCLab），并：
+uv init --python 3.12 --vcs none .
+# 然后创建虚拟环境（可以根据喜好命名）：
+uv venv venv-qc
 ```
 
 创建成功后，激活该虚拟环境：
 
 ```bash
+
 # macOS / Linux
 source venv-qc/bin/activate
 
@@ -43,22 +54,31 @@ source venv-qc/bin/activate
 
 ```bash
 # 使用清华镜像源安装 quarkstudio 及其所有可选依赖
-uv pip install quarkstudio[full] --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+uv add quarkstudio[full] --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# 某些终端不支持[full]，需要加上引号：
+uv add ‘quarkstudio[full]' --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 如遇版本不对问题，则更新库版本（注意，这会更新所有库）
+uv sync -U
 ```
 
-> **注意**: `[full]` 选项非常重要，它确保了图形界面、数据分析等所有功能模块都被正确安装。
+> **注意**: 
+    * `[full]` 选项非常重要，它确保了图形界面、数据分析等所有功能模块都被正确安装。
+    * quarkstudio的画图模块'canvas'依赖pyside6.9.0，但自动安装目前会装最新版6.9.1，需要手动安装6.9.0: uv add pyside6==6.9.0
+    * 运行测控程序还有个依赖需要手动加进去：uv add wath。这是一个计算波形的数学库。
+
 
 ### 第三步：初始化配置
 
 `quark` 命令行工具需要一个全局配置文件 `~/quark.json` 来定位项目的主目录。`~` 代表您的用户主目录。
 
-1.  在您的用户主目录下 (e.g., `/Users/your_username` 或 `/home/your_username` 或 `C:\Users\YourName`) 创建一个名为 `quark.json` 的文件。
+1.  在任意位置执行`quark`命令，会在您的用户主目录下 (e.g., `/Users/your_username` 或 `/home/your_username` 或 `C:\Users\YourName`) 创建一个名为 `quark.json` 的文件。
 
-2.  将以下内容复制到文件中，并**确保 `home` 的路径指向您本地 QCLab 项目下的 `home` 目录**。
+2.  修改server的主目录`home`，并**确保 `home` 的路径指向您本地 QCLab 项目下的 `home` 目录**。
 
 ```json
 {
-    "home": "/Users/zhaoqin/Downloads/QCLab/home"
+    "server":{"home": "/Users/zhaoqin/Downloads/QCLab/home"}
 }
 ```
 
@@ -142,7 +162,7 @@ uv run quark server
 
 - `uv run quark server` 进程正在运行。
 - 您已经使用 `s.login('your_user')` 成功登录。
-- 您 `home/cfg/` 目录下的配置文件中，`dev` 部分已根据您的物理设备正确填写。
+- 您 `home/cfg/` 目录下的配置文件中，`dev` 部分已根据您的物理设备正确填写。将所有所需的驱动程序都已加入到dev目录下。
 
 ### 测试步骤
 
@@ -162,6 +182,8 @@ uv run quark server
     # --- 定义要测试的设备 ---
     # 将 'My_AWG' 替换为您在配置文件中为设备设置的逻辑名称
     device_name = "My_AWG"
+    # 指定待操作的设备通道
+    device_channel = "CH1"
     # 将 'Power' 替换为您想测试的参数，这必须是设备驱动支持的参数
     parameter_to_test = "Power"
 
@@ -169,7 +191,7 @@ uv run quark server
 
     # --- 1. 读取初始参数 ---
     try:
-        initial_value = s.read(f"{device_name}.{parameter_to_test}")
+        initial_value = s.read(f"{device_name}.{device_channel}.{parameter_to_test}")
         print(f"[成功] 读取到初始值: {initial_value}")
     except Exception as e:
         print(f"[失败] 读取参数时出错: {e}")
@@ -180,7 +202,7 @@ uv run quark server
     try:
         new_value = -20 # 假设我们要设置一个新的功率值
         print(f"\n--- 尝试写入新值: {new_value} ---")
-        s.write(f"{device_name}.{parameter_to_test}", new_value)
+        s.write(f"{device_name}.{device_channel}.{parameter_to_test}", new_value)
         print("[成功] 写入命令已发送。")
     except Exception as e:
         print(f"[失败] 写入参数时出错: {e}")
@@ -188,7 +210,7 @@ uv run quark server
 
     # --- 3. 再次读取以验证 ---
     try:
-        read_back_value = s.read(f"{device_name}.{parameter_to_test}")
+        read_back_value = s.read(f"{device_name}.{device_channel}.{parameter_to_test}")
         print(f"\n--- 验证新值 ---")
         print(f"[成功] 再次读取到的值: {read_back_value}")
         
@@ -343,5 +365,13 @@ uv run python run_s21.py
 5.  使用 `matplotlib` 绘制出每个比特的 S21 曲线，并标记出谐振频率点。
 
 如果一切顺利，您将看到一个绘图窗口弹出，显示了清晰的谐振谷。这标志着您已经成功地完成了第一个量子实验！
+
+
+### 一些有用的工具
+
+quarkstudio提供了一些非常有用的工具，包括
+1. studio，用于查看和编辑config表：uv run quark studio
+2. viewer，用于实时显示测量数据：uv run quark viewer
+3. canvas，用于显示所发波形数据：uv run quark canvas
 
 

@@ -1,0 +1,12 @@
+[project]
+name = "QCLab"
+version = "0.1.0"
+dependencies = [
+    "quarkstudio[full]",
+    "pyside6==6.9.0",
+    "wath",
+    "markdown-pdf>=1.7",
+]
+
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple" 

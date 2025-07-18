@@ -1,0 +1,229 @@
+{
+    "dev": {
+        "NS_PQ": {
+            "addr": "192.168.110.25",
+            "name": "NS_DDS_NEW",
+            "type": "driver",
+            "srate": 6400000000.0,
+            "pid": 0,
+            "inuse": true
+        }
+    },
+    "etc": {
+        "driver": {
+            "path": "systemq.dev",
+            "concurrent": true,
+            "timeout": 10,
+            "filter": [
+                "NS"
+            ],
+            "mapping": {
+                "setting_LO": "LO.Frequency",
+                "setting_POW": "LO.Power",
+                "setting_OFFSET": "ZBIAS.Offset",
+                "waveform_RF_I": "I.Waveform",
+                "waveform_RF_Q": "Q.Waveform",
+                "waveform_TRIG": "TRIG.Marker1",
+                "waveform_DDS": "DDS.Waveform",
+                "waveform_SW": "SW.Marker1",
+                "waveform_Z": "Z.Waveform",
+                "setting_PNT": "ADC.PointNumber",
+                "setting_SHOT": "ADC.Shot",
+                "setting_TRIGD": "ADC.TriggerDelay"
+            },
+            "root": "c:\\users\\baqis\\desktop\\systemqos"
+        },
+        "server": {
+            "workers": 4,
+            "shared": 0,
+            "delay": 10.0,
+            "cached": 5,
+            "review": [
+                -2,
+                -1,
+                0,
+                1,
+                2
+            ],
+            "schedule": {
+                "job": {
+                    "hour": "2"
+                }
+            },
+            "filesize": 4000.0
+        },
+        "canvas": {
+            "range": [
+                0,
+                0.0001
+            ],
+            "filter": []
+        },
+        "cloud": {
+            "online": false,
+            "station": "Dongling"
+        }
+    },
+    "var": {},
+    "usr": {
+        "workflow": "default",
+        "quark": {
+            "pid": 12016,
+            "sub": {
+                "pid": 5332,
+                "sub": {
+                    "Assembler": {
+                        "0": 20064,
+                        "1": 18952,
+                        "2": 15080,
+                        "3": 19632
+                    },
+                    "Calculator": 4156,
+                    "DeviceManager": 2408,
+                    "Demodulator": 18688
+                }
+            }
+        }
+    },
+    "station": {
+        "sample": "84V503_ST_LML_250429",
+        "triggercmds": [
+            "NS_PQ_QSYNC.CH1.TRIG"
+        ],
+        "shots": 1024,
+        "default_delay": 1e-06
+    },
+    "gate": {
+        "Measure": {
+            "Q1": {
+                "default_type": "default",
+                "params": {
+                    "duration": 3.072e-06,
+                    "amp": 0.07,
+                    "frequency": 7301000000.0,
+                    "weight": "const(1)",
+                    "phi": 0,
+                    "threshold": 0,
+                    "ring_up_amp": 0.14,
+                    "ring_up_waist": 0.035,
+                    "ring_up_time": 2.56e-07,
+                    "before": 1e-07,
+                    "after": 4e-07
+                }
+            }
+        },
+        "R": {
+            "Q1": {
+                "params": {
+                    "width": 6e-08,
+                    "amp": 0.5,
+                    "frequency": 4000000000.0,
+                    "delta": 0,
+                    "plateau": 0
+                }
+            }
+        },
+        "R12": {
+            "Q1": {
+                "params": {
+                    "width": 6e-08,
+                    "amp": 0.5,
+                    "frequency": 4000000000.0,
+                    "delta": 0,
+                    "plateau": 0
+                }
+            }
+        }
+    },
+    "M0": {
+        "qubits": [
+            "Q0",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Q5",
+            "Q6"
+        ],
+        "adcsr": 4000000000.0,
+        "setting": {
+            "TRIGD": 9.5e-07,
+            "LO": 0
+        },
+        "waveform": {
+            "SR": 8000000000.0,
+            "LEN": 7.5e-05,
+            "DDS_LO": 8000000000.0,
+            "RF": "zero()",
+            "TRIG": "zero()",
+            "DDS": "zero()"
+        },
+        "channel": {
+            "DDS": null,
+            "ADC": null,
+            "TRIG": null,
+            "LO": null
+        },
+        "calibration": {
+            "DDS": {
+                "delay": 5e-07
+            }
+        }
+    },
+    "Q0": {
+        "probe": "M0",
+        "couplers": [
+            "C0"
+        ],
+        "waveform": {
+            "SR": 6000000000.0,
+            "LEN": 7.5e-05,
+            "DDS_LO": 6000000000.0,
+            "RF": "zero()",
+            "DDS": "zero()"
+        },
+        "channel": {
+            "DDS": null,
+            "Z": null
+        },
+        "calibration": {
+            "DDS": {
+                "delay": 0
+            },
+            "Z": {
+                "delay": 0
+            }
+        },
+        "params": {
+            "drop_bias": 0,
+            "idle_bias": 0
+        },
+        "setting": {}
+    },
+    "C0": {
+        "qubits": [
+            "Q0",
+            "Q7"
+        ],
+        "setting": {
+            "OFFSET": 0
+        },
+        "waveform": {
+            "SR": 4000000000.0,
+            "LEN": 7.5e-05,
+            "Z": "zero()"
+        },
+        "channel": {
+            "Z": null
+        },
+        "calibration": {
+            "Z": {
+                "delay": 0
+            }
+        },
+        "params": {
+            "drop_bias": 0,
+            "idle_bias": 0
+        }
+    }
+}

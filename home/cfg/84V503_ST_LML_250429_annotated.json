@@ -1,0 +1,197 @@
+{
+    "_comment_file": "这是 QCLab 测控系统的核心配置文件。它包含了实验装置的所有参数，从硬件设备到校准后的量子比特门参数。这个带注解的版本解释了每个部分的结构和用途。",
+    "dev": {
+        "_comment": "此部分定义了所有连接到系统的物理硬件设备。每个键是软件内部使用的仪器的逻辑名称。",
+        "NS_PQ": {
+            "_comment": "主仪器的逻辑名称，很可能是一个包含任意波形发生器(AWG)和模数转换器(ADC)的多功能卡。",
+            "addr": "192.168.110.25",
+            "name": "NS_DDS_NEW",
+            "type": "driver",
+            "srate": 6400000000.0,
+            "_srate_comment": "采样率（单位：样本/秒）。这是一个关键参数，决定了生成脉冲的时间精度。",
+            "pid": 0,
+            "inuse": true
+        },
+        "NS_PQ_QSYNC": {
+            "_comment": "与主仪器关联的同步和触发控制单元的逻辑名称。",
+            "addr": "192.168.110.25",
+            "name": "NS_QSYNC",
+            "type": "driver",
+            "srate": null,
+            "pid": 0,
+            "inuse": true
+        }
+    },
+    "etc": {
+        "_comment": "此部分包含软件框架的杂项（et cetera）全局配置。",
+        "driver": {
+            "_comment": "与仪器驱动程序管理相关的设置。",
+            "path": "systemq.dev",
+            "_path_comment": "仪器驱动程序类所在的 Python 模块路径。",
+            "concurrent": true,
+            "timeout": 10,
+            "filter": [
+                "NS"
+            ],
+            "mapping": {
+                "_comment": "硬件抽象层 (HAL) 映射。这对于编写硬件无关的实验脚本至关重要。它将通用命令名映射到特定的仪器驱动程序属性。",
+                "setting_LO": "LO.Frequency",
+                "setting_POW": "LO.Power",
+                "setting_OFFSET": "ZBIAS.Offset",
+                "waveform_RF_I": "I.Waveform",
+                "waveform_RF_Q": "Q.Waveform",
+                "waveform_TRIG": "TRIG.Marker1",
+                "waveform_DDS": "DDS.Waveform",
+                "waveform_SW": "SW.Marker1",
+                "waveform_Z": "Z.Waveform",
+                "setting_PNT": "ADC.PointNumber",
+                "setting_SHOT": "ADC.Shot",
+                "setting_TRIGD": "ADC.TriggerDelay"
+            },
+            "root": "c:\\users\\baqis\\desktop\\systemqos",
+            "_root_comment": "控制软件在服务器上的根目录。路径表明服务器可能是一台 Windows 机器。"
+        },
+        "server": {
+            "_comment": "后端 QuarkServer 的配置。",
+            "workers": 4,
+            "_workers_comment": "用于并行执行任务的工作进程数。",
+            "shared": 0,
+            "delay": 10.0,
+            "cached": 5,
+            "review": [
+                -2,
+                -1,
+                0,
+                1,
+                2
+            ],
+            "schedule": {
+                "_comment": "自动化任务调度器。",
+                "job": {
+                    "hour": "2",
+                    "_hour_comment": "设置一个在凌晨2点自动运行的任务。"
+                }
+            },
+            "filesize": 4000.0
+        },
+        "canvas": {
+            "range": [
+                0,
+                0.0001
+            ],
+            "filter": []
+        },
+        "cloud": {
+            "online": false,
+            "station": "Dongling"
+        }
+    },
+    "var": {
+        "_comment": "一个用于定义可在实验脚本中访问的全局变量的空间。"
+    },
+    "usr": {
+        "_comment": "用户会话和进程信息。主要用于调试目的。",
+        "workflow": "default",
+        "quark": {
+            "pid": 12016,
+            "_pid_comment": "QuarkServer 主进程的进程ID。",
+            "sub": {
+                "pid": 5332,
+                "sub": {
+                    "_comment": "由服务器管理的各个子模块的进程ID。",
+                    "Assembler": {
+                        "0": 20064,
+                        "1": 18952,
+                        "2": 15080,
+                        "3": 19632
+                    },
+                    "Calculator": 4156,
+                    "DeviceManager": 2408,
+                    "Demodulator": 18688
+                }
+            }
+        }
+    },
+    "station": {
+        "_comment": "定义当前实验站的高级参数。",
+        "sample": "84V503_ST_LML_250429",
+        "_sample_comment": "正在测试的量子芯片样本的唯一标识符。",
+        "triggercmds": [
+            "NS_PQ_QSYNC.CH1.TRIG"
+        ],
+        "_triggercmds_comment": "触发一个完整实验序列的具体命令。",
+        "shots": 1024,
+        "_shots_comment": "为进行统计平均而重复实验的默认次数。",
+        "default_delay": 1e-06,
+        "_default_delay_comment": "连续 shot 之间的默认延迟时间（秒）。"
+    },
+    "gate": {
+        "_comment": "配置文件的核心。这是一个包含每个量子比特所有已校准量子门参数的综合数据库。",
+        "Measure": {
+            "_comment": "读出/测量操作的参数。S21 实验的目标是为每个量子比特的谐振腔找到最佳‘频率’。",
+            "Q1": {
+                "default_type": "default",
+                "params": {
+                    "_comment": "用于测量量子比特1的参数。‘threshold’为0表明它很可能未被校准。",
+                    "duration": 3.072e-06,
+                    "amp": 0.07,
+                    "frequency": 7301000000.0,
+                    "weight": "const(1)",
+                    "phi": 0,
+                    "threshold": 0,
+                    "ring_up_amp": 0.14,
+                    "ring_up_waist": 0.035,
+                    "ring_up_time": 2.56e-07,
+                    "before": 1e-07,
+                    "after": 4e-07
+                }
+            },
+            "Q29": {
+                "_comment": "用于测量量子比特29的参数。非零的‘threshold’和特定的‘phi’值表明该比特已被仔细校准。",
+                "default_type": "default",
+                "params": {
+                    "duration": 3.072e-06,
+                    "amp": 0.14,
+                    "frequency": 7298874408.532153,
+                    "_frequency_comment": "读出谐振腔的频率（单位：Hz）。",
+                    "weight": "const(1)",
+                    "phi": -1.0745519394983638,
+                    "_phi_comment": "读出脉冲的相位（单位：弧度）。",
+                    "threshold": 136921.921875,
+                    "_threshold_comment": "用于区分|0>和|1>态的IQ判别阈值。",
+                    "ring_up_amp": 0.14,
+                    "ring_up_waist": 0.07,
+                    "ring_up_time": 2.56e-07,
+                    "before": 1e-07,
+                    "after": 4e-07
+                }
+            }
+        },
+        "R": {
+            "_comment": "单比特旋转门（R-gate）的参数。这是驱动量子比特在不同状态间跃迁的基础门。",
+            "Q1": {
+                "_comment": "用于旋转量子比特1的参数。4.0 GHz 的默认频率表明它未被校准。",
+                "params": {
+                    "width": 6e-08,
+                    "amp": 0.5,
+                    "frequency": 4000000000.0,
+                    "delta": 0,
+                    "plateau": 0
+                }
+            },
+            "Q29": {
+                "_comment": "用于旋转量子比特29的参数。具体的频率和幅度表明它已被校准。",
+                "params": {
+                    "width": 5e-08,
+                    "_width_comment": "驱动脉冲的持续时间（秒）。特定的宽度和幅度对应特定的旋转角度（例如，π脉冲）。",
+                    "amp": 0.11742128533529897,
+                    "_amp_comment": "驱动脉冲的幅度（单位：伏特）。",
+                    "frequency": 4251322765.384858,
+                    "_frequency_comment": "量子比特本身的跃迁频率（单位：Hz）。通过能谱学（例如，Rabi实验）找到。",
+                    "delta": 0,
+                    "plateau": 0
+                }
+            }
+        }
+    }
+}
