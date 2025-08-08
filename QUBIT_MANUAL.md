@@ -59,35 +59,65 @@
 
 ### 2.2 `QCLab` 项目的安装与配置
 
-我们强烈建议在 Python 虚拟环境 (`venv`) 中安装 `QCLab`，以避免与系统或其他项目的依赖库产生冲突。
+我们强烈建议使用 `uv` 管理虚拟环境与依赖（更快、更可复现）。如不便使用 `uv`，也可采用经典 `venv + pip`。
 
-**1. 创建并激活虚拟环境：**
+#### 2.2.A 使用 `uv`（推荐）
+
+参考快速上手：`QUICK_GUIDE.md`
+
+1) 创建并激活虚拟环境
 
 ```bash
-# 在项目根目录下创建名为 .venv 的虚拟环境
+uv venv venv-qc --python 3.12
+
+# 激活 (macOS/Linux)
+source venv-qc/bin/activate
+# 激活 (Windows)
+./venv-qc/Scripts/activate
+```
+
+2) 安装依赖（使用清华镜像）
+
+```bash
+uv pip install "quarkstudio[full]" --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# 按需修正：
+uv pip install pyside6==6.9.0
+uv pip install wath
+```
+
+3) 初始化全局配置与服务
+
+```bash
+# 首次运行会生成 ~/quark.json，编辑其中的 server.home 指向本仓库的 `home` 目录
+quark
+
+# 启动后端服务（建议在已激活环境中）
+uv run quark server
+```
+
+更多细节、故障排查与示例命令，请参见 `QUICK_GUIDE.md`。
+
+#### 2.2.B 使用 `venv + pip`（可选）
+
+**1) 创建并激活虚拟环境：**
+
+```bash
 python -m venv .venv
-
-# 激活虚拟环境 (Linux/macOS)
-source .venv/bin/activate
-
-# 激活虚拟环境 (Windows)
-.venv\Scripts\activate
+source .venv/bin/activate            # Linux/macOS
+.venv\Scripts\activate               # Windows
 ```
 
-**2. 安装依赖：**
-
-`QCLab` 项目可能提供一个 `requirements.txt` 文件（或类似文件）来方便地安装所有必需的 Python 包。
+**2) 安装依赖：**
 
 ```bash
-# (如果存在) 使用 pip 安装所有依赖
-pip install -r requirements.txt
+pip install -r requirements.txt      # 若本仓库提供
 ```
 
-**3. 系统配置：**
+**3) 系统配置：**
 
 根据 `CONFIG_GUIDE.md` 的指引，配置硬件连接和通道信息。这通常涉及到一个或多个 YAML 或 JSON 格式的配置文件。您需要将物理仪器、通道与 `QCLab` 中的逻辑名称对应起来。
 
-例如，一个配置文件片段可能如下所示：
+例如：
 
 ```yaml
 AWG_XY:
@@ -104,52 +134,45 @@ AWG_XY:
 
 `qlisp` (Quantum Lisp) 是一种专为量子脉冲序列编程设计的领域特定语言。它的语法简洁，富有表达力，核心思想是**将脉冲序列的定义与执行分离开**。
 
+> 重要说明（与本仓库对齐）：
+> 本手册部分章节为便于理解，使用了“脉冲级”示例（如 `PULSE`/`WAIT`/`TRIG` 与假想的 `qclab_run`/`qclab_sweep`）。
+> 在本仓库的实际实现中，推荐采用更高层的 `Recipe + QLisp 电路` 工作流：电路以“(operation, target)”元组列表表示，编译后由后端生成并下发具体脉冲。参见 `qlisp_syntax_guide.md` 与 `home/run/s21_annotated.py`。
+
 **基本概念：**
 
 *   **指令 (Instruction)：** `qlisp` 程序的基本单元，代表一个具体的操作，如 `PULSE`（播放脉冲）、`WAIT`（等待）、`TRIG`（触发采集）。
 *   **块 (Block)：** 一组指令的集合。块可以嵌套，形成层次结构。
 *   **参数化：** `qlisp` 支持在定义时使用变量作为参数，在执行时再传入具体数值。这使得序列的复用和扫描变得非常方便。
 
-**示例代码 (来自 `qlisp_syntax_guide.md`)：**
+**示例代码（与本仓库对齐）：**
 
 ```python
-# 这是一个 qlisp 程序的 Python 表示
-from qlisp import *
-
-# 定义一个包含两个脉冲的序列
-seq = [
-    PULSE(channel='Qubit1_XY', waveform='gaussian', length=20e-9, amplitude=0.5),
-    WAIT(duration=100e-9),
-    PULSE(channel='Qubit1_XY', waveform='gaussian', length=20e-9, amplitude=-0.5)
+# 电路以“(operation, target)”元组的列表表示
+# operation 也为元组，如 ('X90',) / ('Measure', 0)
+circuit = [
+    (('X90',), 'Q0'),
+    (('Measure', 0), 'Q0'),
 ]
-
-# 编译并执行序列
-# (实际的执行命令可能因 QCLab 版本而异)
-qclab_run(seq)
 ```
 
-### 2.4 编写并执行第一个 `qlisp` 程序
+### 2.4 编写并执行第一个 `qlisp` 程序（概念示例）
 
 让我们结合一个简单的例子——播放一个高斯脉冲并触发一次测量——来实践一下。
 
 **1. 创建 `hello_quantum.py` 文件：**
 
 ```python
-from qlisp import *
-# 假设 qclab_run 是 QCLab 中用于执行的函数
-from qclab.execution import qclab_run
+# 本示例为“概念示例”，展示参数化思想
+from qlisp import var
 
-# 定义一个简单的 Rabi 实验脉冲
-# 我们使用变量 'amp' 来参数化幅度
 rabi_pulse = [
-    PULSE(channel='Qubit1_XY', waveform='gaussian', length=20e-9, amplitude=var('amp')),
-    TRIG(channel='Measure_Trig', duration=10e-9) # 触发测量
+    # 概念化的脉冲级描述：
+    # PULSE(channel='Qubit1_XY', waveform='gaussian', length=20e-9, amplitude=var('amp')),
+    # TRIG(channel='Measure_Trig', duration=10e-9)
 ]
 
-# 设置一个具体的幅度值并执行
-result = qclab_run(rabi_pulse, params={'amp': 0.8})
-
-# 打印测量结果
+# 实际运行请参考 2.5 小节的 Recipe 范式
+result = {"note": "conceptual only"}
 print(result)
 ```
 
@@ -161,9 +184,47 @@ print(result)
 python hello_quantum.py
 ```
 
-如果一切配置正确，您应该能看到仪器执行了相应的操作，并且程序打印出了测量结果。这标志着您已经成功迈出了使用 `QCLab` 的第一步。
+如果一切配置正确，您应该能看到服务正常启动。实际实验执行方式请参考下一节的 Recipe 示例。
 
 在下一章中，我们将开始进行真正的量子比特表征实验。
+
+### 2.5 使用 Recipe 运行第一个实验（S21，参考实现）
+
+下面给出与本仓库一致的最小化工作流，展示如何使用 `Recipe` 与电路描述来执行一次 S21 扫描。
+
+电路函数（节选）：
+
+```python
+def circuit(qubits: list[str], ctx=None) -> list:
+    cc = [(('Measure', i, ), q) for i, q in enumerate(qubits)]
+    return cc
+```
+
+执行函数（节选）：
+
+```python
+def calibrate(qubits: list[str]) -> list:
+    qubits = [f'Q{i}' for i in [999]]
+
+    rcp = Recipe('s21', signal='iq_avg')
+    rcp.lib = 'lib.gates.u3rcp'
+    rcp.arch = 'rcp'
+    rcp.circuit = circuit
+
+    rcp['qubits'] = tuple(qubits)
+    rcp['freq'] = np.linspace(-10, 10, 101) * 1e6
+    # ...
+```
+
+运行步骤（示例）：
+
+```bash
+# 1) 启动服务（确保 ~/quark.json 的 server.home 指向本仓库的 home 目录）
+uv run quark server
+
+# 2) 另开终端，激活同一虚拟环境后运行示例脚本
+uv run python home/run/s21.py
+```
 
 ## 第三章：基础单比特表征
 
