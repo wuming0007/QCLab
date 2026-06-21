@@ -1,5 +1,36 @@
 # QCLab 项目日志
 
+## [2026-06-21] - 新增 HANDOFF_TEMPLATE.md 支撑多 agent 无缝切换
+
+### 新增内容
+- 新增 `docs/planning/HANDOFF_TEMPLATE.md`（内置完整使用指南），用于因 token 配额、上下文污染在多个 agent / session 之间切换时实现低摩擦恢复。
+- 模板包含：生成时机、恢复优先级（resume > fork --worktree > 新 session + prompt）、必须先读文件清单、结构化决策/待办表格、专用恢复 prompt 模板、与 `/compact`、`/flush`、worktree、subagent、todo_write 的配合方式。
+- 在 `AGENTS.md` High-Value File Map 中登记该模板。
+
+### 背景与价值
+长周期复杂项目（如 QXtrl 规划与后续实现）经常需要跨多个 Grok session/agent 工作。纯聊天历史恢复成本高。本模板配合现有 `AGENTS.md` + `docs/planning/` 规划文档体系，让新 agent 能快速拿到正确约束和当前状态，最大化利用有限配额。
+
+### 使用触发
+重要阶段结束、准备 `/compact` 或切换 worktree / 模型 / session 前，主动让 agent 产出带日期的 handoff 文件。
+
+## [2026-06-07] - 引入演化式项目上下文工作流
+
+### 新增内容
+- 新增 `AGENTS.md`，作为项目级 agent / 协作者入口上下文。
+- 新增 `template.md`，沉淀 QXtrl 架构、API、模块设计的可复用写法。
+- 新增 `docs/planning/QXtrl_项目上下文工作流.md`，记录工作流解读、采纳理由和本项目适配方式。
+
+### 工作流约定（初始）
+- 重要结构、架构权威、命令或协作规则变化时，更新 `AGENTS.md`。
+- 形成可复用设计模式或检查清单时，更新 `template.md`。
+- 重要项目变更继续记录在 `CHANGELOG.md`。
+- 私有上下文放入 `AGENTS.private.md` 或 `.local-learnings/`，不进入版本控制。
+
+> 后续演进见 2026-06-21 条目及 `docs/planning/QXtrl_项目上下文工作流.md` §7。日常操作规则已收敛到 `AGENTS.md`。
+
+### 设计理由
+- QXtrl 当前处于架构快速演进和多文档协作阶段，需要一个轻量、可持续更新的入口上下文，降低后续人员和 agent 的重复理解成本。
+
 ## [2024-12-19] - 初始环境配置
 
 ### 新增功能
