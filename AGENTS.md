@@ -18,10 +18,20 @@ The active strategic direction is QXtrl. Treat legacy code and QuarkStudio examp
 | Path | Role |
 | --- | --- |
 | `docs/planning/` | Main QXtrl planning workspace and current architecture documents |
+| `qxtrl/` | New QXtrl product source trunk (L0+ using short codes: cc, el, ...). Start of independent contracts/runtime (legacy `home/` is reference only). Layers use short codes for packages: cc (L0), el (L1), etc. |
 | `docs/planning/QXtrl量子测控软件开发需求.md` | Current PRD, v0.4 discussion draft |
 | `docs/planning/QXtrl_架构层号与文档索引.md` | Authority for L0-L9 layer numbering and document ownership |
 | `docs/planning/QXtrl模块拆解与接口责任矩阵.md` | Module responsibilities and interface matrix |
 | `docs/planning/QXtrl_MVP最薄垂直切片定义.md` | MVP thin vertical slice definition |
+| `docs/planning/QXtrl_L1_API说明.md` | Current L1 / EL Python API reference |
+| `docs/planning/QXtrl_L2_CPIR_Compiler_PulseIR_设计.md` | Current L2 / CPIR Compiler & PulseIR design entry |
+| `docs/planning/QXtrl_L2_API说明.md` | Current L2 / CPIR Python API reference |
+| `docs/planning/QXtrl_L3_EB_ExecutionBackend_设计.md` | Current L3 / EB Execution Backend design entry |
+| `docs/planning/QXtrl_L3_API说明.md` | Current L3 / EB Python API reference |
+| `docs/planning/QXtrl_L4_RS_RuntimeScheduler_设计.md` | Current L4 / RS Runtime & Scheduler design entry |
+| `docs/planning/QXtrl_L5_DS_DataState_设计.md` | Current L5 / DS Data & State design entry |
+| `docs/planning/QXtrl_L7_TRH_TwinReplayHIL_设计.md` | Current L7 / TRH Twin / Replay / HIL design entry |
+| `docs/planning/QXtrl_L9_OI_OperatorInterfaces_设计.md` | Current L9 / OI Operator Interfaces design entry; MVP focuses on thin Python SDK + CLI |
 | `docs/planning/QXtrl_第一次讨论会决策清单.md` | First architecture discussion decision list |
 | `docs/planning/HANDOFF_TEMPLATE.md` | Session/agent handoff template + usage guide for seamless context transfer across token quota switches, forks, and new sessions |
 | `quarkstudio_docs/` | Locally downloaded QuarkStudio documentation |
@@ -34,6 +44,13 @@ The active strategic direction is QXtrl. Treat legacy code and QuarkStudio examp
 | `notebooks/` | Notebook-based experiments and reports |
 | `CHANGELOG.md` | Project change history and rationale |
 | `template.md` | In-repo replication guide for QXtrl-style architecture/design work |
+| `qxtrl/cc/` | L0 / CC (Core Contracts) implementation |
+| `qxtrl/el/` | L1 / EL (Experiment Language) implementation (MVP started per design doc) |
+| `qxtrl/cpir/` | L2 / CPIR (Compiler / Pulse IR) implementation prototype |
+| `qxtrl/eb/` | L3 / EB (Execution Backend) implementation prototype |
+| `qxtrl/rs/` | L4 / RS (Runtime & Scheduler) implementation prototype |
+| `qxtrl/ds/` | L5 / DS (Data & State) minimal manifest implementation and future ResultStore/DataSink trunk |
+| `qxtrl/trh/` | L7 / TRH (Twin / Replay / HIL) virtual runner prototype |
 
 ## 3. Architecture Authority
 
@@ -73,6 +90,7 @@ Preserve these unless the user explicitly asks to revisit them:
 8. Virtual QPU / VirtualInstrument / Replay / Twin should consume the same contracts as real execution where feasible.
 9. MVP should stay thin: Rabi is the required demo path; S21 is optional enhancement.
 10. Historical L2/L3 docs have layer-number drift. Check `QXtrl_架构层号与文档索引.md` before renaming or extending them.
+11. Schema version prefixes use implementation short codes where defined, e.g. `qxtrl.cc.*` for L0/Core Contracts and `qxtrl.el.*` for L1/Experiment Language. Cross-layer data `kind` values may still use layer semantic labels such as `l0_snapshot`; do not confuse those with Python package names.
 
 ## 5. Development And Documentation Workflow (Evolving Context Workflow)
 
@@ -159,6 +177,11 @@ These commands appear in project guides; verify them in the current environment 
 | Run Quark Configurator UI | `uv run python quark_configurator/main.py` |
 | Search files | `rg --files` |
 | Search content | `rg "pattern"` |
+| Run L0/CC tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/cc/tests/ -q` |
+| Run L1/EL tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/el/tests/ -q` (when added). See short codes in 架构层号与文档索引.md. |
+| Run L2/CPIR tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/cpir/tests/ -q` |
+| Run L5/DS tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/ds/tests/ -q` |
+| Run L7/TRH tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/trh/tests/ -q` |
 
 For documentation-only changes, structural checks such as heading search, link inspection, and code-block closure checks are usually enough.
 
@@ -169,4 +192,3 @@ For documentation-only changes, structural checks such as heading search, link i
 3. Some docs and generated artifacts may be untracked even though they are important to the planning workflow.
 4. QuarkStudio parameter paths currently appear in more than one style, such as `gate.Measure.Q0.params.frequency` and `Q0.Measure.frequency`; do not assume they are equivalent without an explicit mapping.
 5. DOCX render QA may fail in some environments because LibreOffice headless rendering can crash; disclose structural-only QA if that happens.
-
