@@ -1,5 +1,17 @@
 # QCLab 项目日志
 
+## [2026-08-17] - 芯片二维拓扑图用户说明
+
+- 新增 `qxtrl/viz/README.md`：如何用 `ChipLayout` 画 Willow 以外的方格、ASCII 缺位图和任意平面图，以及如何按关键字注入 T1 / 两比特保真度并导出论文图。
+
+## [2026-08-17] - 可复用芯片二维拓扑图（Willow 示例）
+
+### 论文级拓扑可视化
+- 新增 `qxtrl/viz/`：与具体芯片解耦的二维拓扑绘图。圆形为量子比特，方块为耦合器；填充色由度量关键字绑定（如 `t1`、`cz_fidelity`），便于换成实验室实测表。
+- Willow 示例使用公开 Cirq `willow_pink` / Willow105 占位网格（105 qubit，182 近邻耦合，平均度 3.47）。逐点颜色是按 Chip-1 QEC 公开均值±标准差生成的示意样本，不是 Google 实测地图，不可用于控制。
+- 输出 PDF/SVG（可编辑字体）+ 600 dpi PNG。入口：`PYTHONPATH=. python -m qxtrl.viz` 或 `qxtrl/examples/plot_willow_topology.py`。
+- 其他结构可通过 `ChipLayout.from_ascii()` / `rectangular_grid()` / 显式坐标复用同一绘图函数。
+
 ## [2026-06-22] - MVP Demo Rehearsal 推进 (L7 四审后 + 子代理规划/审查/漏洞汇总)
 
 ### MVP 彩排就绪进展

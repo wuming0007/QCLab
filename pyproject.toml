@@ -8,5 +8,11 @@ dependencies = [
     "markdown-pdf>=1.7",
 ]
 
+[project.optional-dependencies]
+viz = [
+    "matplotlib>=3.8",
+    "numpy>=1.24",
+]
+
 [tool.uv]
 index-url = "https://pypi.tuna.tsinghua.edu.cn/simple" 

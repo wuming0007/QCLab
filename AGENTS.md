@@ -51,6 +51,7 @@ The active strategic direction is QXtrl. Treat legacy code and QuarkStudio examp
 | `qxtrl/rs/` | L4 / RS (Runtime & Scheduler) implementation prototype |
 | `qxtrl/ds/` | L5 / DS (Data & State) minimal manifest implementation and future ResultStore/DataSink trunk |
 | `qxtrl/trh/` | L7 / TRH (Twin / Replay / HIL) virtual runner prototype |
+| `qxtrl/viz/` | Publication chip topology maps (L9-facing helper, not a new layer). Circles = qubits, squares = couplers; colour is bound to a metric keyword. User guide: `qxtrl/viz/README.md`. |
 
 ## 3. Architecture Authority
 
@@ -182,6 +183,9 @@ These commands appear in project guides; verify them in the current environment 
 | Run L2/CPIR tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/cpir/tests/ -q` |
 | Run L5/DS tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/ds/tests/ -q` |
 | Run L7/TRH tests (MVP) | `PYTHONPATH=. python3 -m pytest qxtrl/trh/tests/ -q` |
+| Run topology-map tests | `PYTHONPATH=. python3 -m pytest qxtrl/viz/tests/ -q` |
+| Render Willow topology figure | `PYTHONPATH=. python3 -m qxtrl.viz --qubit-metric t1 --coupler-metric cz_fidelity --out figures/chip_topology/willow105` |
+| Chip topology map user guide | `qxtrl/viz/README.md` |
 
 For documentation-only changes, structural checks such as heading search, link inspection, and code-block closure checks are usually enough.
 
@@ -192,3 +196,4 @@ For documentation-only changes, structural checks such as heading search, link i
 3. Some docs and generated artifacts may be untracked even though they are important to the planning workflow.
 4. QuarkStudio parameter paths currently appear in more than one style, such as `gate.Measure.Q0.params.frequency` and `Q0.Measure.frequency`; do not assume they are equivalent without an explicit mapping.
 5. DOCX render QA may fail in some environments because LibreOffice headless rendering can crash; disclose structural-only QA if that happens.
+6. `qxtrl.viz.willow105_layout()` uses the public Cirq Willow105 occupancy. Per-site colours are illustrative samples from published Chip-1 aggregates, not a measured Google device map, and must not be used for control.
